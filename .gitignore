@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build
+dist/
+build/
+.next/
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Prisma
+backend/prisma/*.db
+
+# Docker
+docker-compose.override.yml
+
+# Test coverage
+coverage/
+
+# Documentação gerada (não a nossa pasta docImplementacao)
+docs/
+
+# Temporary
+tmp/
+temp/
+
