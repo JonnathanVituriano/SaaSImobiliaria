@@ -25,7 +25,7 @@ async function bootstrap(): Promise<void> {
     credentials: true,
   });
 
-  const port = process.env.APP_PORT || 3000;
+  const port = process.env.APP_PORT || 3001;
   await app.listen(port);
   console.log(`🚀 API rodando em http://localhost:${port}/api/v1`);
 }

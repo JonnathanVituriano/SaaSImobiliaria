@@ -114,7 +114,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6" suppressHydrationWarning>
+    <div className="p-6 space-y-6" suppressHydrationWarning>
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>

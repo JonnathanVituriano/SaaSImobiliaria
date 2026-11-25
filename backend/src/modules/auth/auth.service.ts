@@ -103,20 +103,19 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload);
 
-    // Gera um hash aleatório para o refresh token
-    const refreshTokenPlain = uuidv4();
-    const refreshTokenHash = await bcrypt.hash(refreshTokenPlain, 10);
+    // Gera um hash aleatório para o refresh token no formato <tokenId>.<secret>
+    const tokenId = uuidv4();
+    const secret = uuidv4();
+    const refreshTokenPlain = `${tokenId}.${secret}`;
+    const refreshTokenHash = await bcrypt.hash(secret, 10);
 
-    const expiresInString = this.configService.get<string>(
-      'REFRESH_TOKEN_EXPIRES_IN',
-      '7d',
-    );
     // Assumindo 7 dias como padrão
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); 
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
     // Salva o Refresh Token no banco de dados, atrelado ao usuário
     await this.prisma.extended.refreshToken.create({
       data: {
+        id: tokenId,
         userId: user.id,
         tokenHash: refreshTokenHash,
         expiresAt,
@@ -138,6 +137,57 @@ export class AuthService {
     };
   }
 
-  // TODO: Criar a lógica do Refresh Token e de Logout depois (RF-AUTH-03, RF-AUTH-04)
+  async refresh(refreshTokenPlain: string): Promise<TokenResponseDto> {
+    const parts = refreshTokenPlain.split('.');
+    if (parts.length !== 2) {
+      throw new UnauthorizedException('Refresh token inválido');
+    }
+
+    const [tokenId, secret] = parts;
+    const storedToken = await this.prisma.refreshToken.findUnique({
+      where: { id: tokenId },
+      include: {
+        user: {
+          include: {
+            role: {
+              include: {
+                rolePermissions: {
+                  include: { permission: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (
+      !storedToken ||
+      storedToken.revokedAt ||
+      storedToken.expiresAt <= new Date()
+    ) {
+      throw new UnauthorizedException('Refresh token expirado ou revogado');
+    }
+
+    const isValid = await bcrypt.compare(secret, storedToken.tokenHash);
+    if (!isValid) {
+      throw new UnauthorizedException('Refresh token inválido');
+    }
+
+    if (!storedToken.user.isActive) {
+      throw new ForbiddenException('Usuário inativo');
+    }
+
+    await this.prisma.refreshToken.update({
+      where: { id: storedToken.id },
+      data: { revokedAt: new Date() },
+    });
+
+    const permissions = storedToken.user.role.rolePermissions.map(
+      (rp) => rp.permission.code,
+    );
+
+    return this.generateTokens(storedToken.user, permissions);
+  }
 }
 

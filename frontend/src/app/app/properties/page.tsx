@@ -154,8 +154,10 @@ export default function PropertiesPage() {
       setForm(emptyForm)
       setEditingId(null)
       fetchProperties()
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erro ao salvar imóvel:", err)
+      const msg = err?.response?.data?.message
+      alert(Array.isArray(msg) ? msg.join(", ") : msg || "Erro ao salvar imóvel.")
     } finally {
       setSaving(false)
     }
@@ -171,7 +173,7 @@ export default function PropertiesPage() {
   }
 
   return (
-    <div className="space-y-6" suppressHydrationWarning>
+    <div className="p-6 space-y-6" suppressHydrationWarning>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

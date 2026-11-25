@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const token = request.cookies.get('saas_token')?.value;
 
   // Se estiver tentando acessar /app e não tiver token, redireciona para login
@@ -24,4 +24,3 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: ['/app/:path*', '/login'],
 };
-

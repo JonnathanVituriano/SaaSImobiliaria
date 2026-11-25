@@ -17,6 +17,7 @@ interface Tenant {
   cpf: string
   email?: string
   phone?: string
+  whatsapp?: string
 }
 
 // Mask functions
@@ -79,12 +80,13 @@ export default function TenantsPage() {
   }
 
   const openEdit = (t: Tenant) => {
+    const rawPhone = t.whatsapp || t.phone || ""
     setEditingId(t.id)
     setForm({
       name: t.name,
       cpf: formatCPF(t.cpf),
       email: t.email ?? "",
-      phone: t.phone ? formatPhone(t.phone) : "",
+      phone: rawPhone ? formatPhone(rawPhone) : "",
     })
     setModalOpen(true)
   }
@@ -93,10 +95,12 @@ export default function TenantsPage() {
     e.preventDefault()
     setSaving(true)
     try {
+      const cleanPhone = stripMask(form.phone)
       const payload: Record<string, unknown> = {
         name: form.name,
         cpf: stripMask(form.cpf),
-        whatsapp: stripMask(form.phone),
+        whatsapp: cleanPhone,
+        phone: cleanPhone,
       }
       if (form.email) payload.email = form.email
 
@@ -110,8 +114,10 @@ export default function TenantsPage() {
       setForm(emptyForm)
       setEditingId(null)
       fetchTenants()
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erro ao salvar inquilino:", err)
+      const msg = err?.response?.data?.message
+      alert(Array.isArray(msg) ? msg.join(", ") : msg || "Erro ao salvar inquilino.")
     } finally {
       setSaving(false)
     }
@@ -126,7 +132,7 @@ export default function TenantsPage() {
   })
 
   return (
-    <div className="space-y-6" suppressHydrationWarning>
+    <div className="p-6 space-y-6" suppressHydrationWarning>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -204,7 +210,7 @@ export default function TenantsPage() {
                     {t.email ?? "—"}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
-                    {t.phone ? formatPhone(t.phone) : "—"}
+                    {t.whatsapp || t.phone ? formatPhone((t.whatsapp || t.phone)!) : "—"}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <button
@@ -289,13 +295,14 @@ export default function TenantsPage() {
                 />
               </div>
 
-              {/* Phone */}
+              {/* Phone / WhatsApp */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
-                  Telefone
+                  Telefone / WhatsApp *
                 </label>
                 <input
                   type="text"
+                  required
                   value={form.phone}
                   onChange={(e) =>
                     setForm({ ...form, phone: formatPhone(e.target.value) })
